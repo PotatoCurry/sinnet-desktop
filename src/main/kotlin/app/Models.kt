@@ -6,7 +6,6 @@ data class Channel(
     val description: String
 )
 
-// Use for displaying stuff in interface - remove from here?
 data class User(
     val id: Int,
     val name: String,

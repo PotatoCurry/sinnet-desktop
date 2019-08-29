@@ -2,7 +2,6 @@ package app
 
 import com.beust.klaxon.FieldRenamer
 import com.beust.klaxon.Klaxon
-import com.sun.jmx.snmp.EnumRowStatus.active
 import io.ktor.client.HttpClient
 import io.ktor.client.features.defaultRequest
 import io.ktor.client.features.websocket.DefaultClientWebSocketSession
@@ -11,19 +10,15 @@ import io.ktor.client.features.websocket.webSocket
 import io.ktor.client.request.get
 import io.ktor.client.request.host
 import io.ktor.client.request.port
-import io.ktor.http.cio.websocket.CloseReason
 import io.ktor.http.cio.websocket.Frame
-import io.ktor.http.cio.websocket.close
 import io.ktor.http.cio.websocket.readText
 import io.ktor.util.KtorExperimentalAPI
 import javafx.application.Platform
 import javafx.collections.ObservableList
 import javafx.stage.Stage
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import tornadofx.*
-import view.ActiveView
+import tornadofx.App
+import tornadofx.observableMapOf
 import view.LoginView
 
 val klaxon = Klaxon().fieldRenamer(
@@ -80,16 +75,12 @@ class Main : App(LoginView::class) {
     override fun start(stage: Stage) {
         stage.title = "Sinnet"
 
-
-//        stage.setOnCloseRequest {
-//            runBlocking { closeSession() }
-//        }
-
         super.start(stage)
     }
 }
 
 
+@KtorExperimentalAPI
 suspend fun launchWebsocket() {
     client.webSocket(path = "/messages") {
         websocketSession = this
@@ -110,12 +101,9 @@ suspend fun launchWebsocket() {
     }
 }
 
+@KtorExperimentalAPI
 fun addMessage(message: Message) {
     Platform.runLater {
         currentMessages[message.channel]!!.add(message.text)
     }
-}
-
-suspend fun closeSession() {
-    websocketSession.close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
 }
