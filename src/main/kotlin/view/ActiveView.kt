@@ -1,16 +1,14 @@
 package view
 
-import app.*
+import app.channels
+import app.currentMessages
+import app.sendMessage
 import io.ktor.util.KtorExperimentalAPI
-import javafx.geometry.NodeOrientation
 import javafx.geometry.Side
 import javafx.scene.control.ListView
+import javafx.scene.control.SelectionMode
 import javafx.scene.control.TabPane
-import javafx.scene.paint.Color
-import javafx.scene.text.Font
-import javafx.scene.transform.Rotate
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ImplicitReflectionSerializer
 import tornadofx.*
 
 class ActiveView : View() {
@@ -70,7 +68,6 @@ lateinit var messageView: ListView<String>
 
 class MessageView : View() {
     @KtorExperimentalAPI
-    @ImplicitReflectionSerializer
     override val root = vbox {
         tabpane {
             side = Side.LEFT
@@ -79,8 +76,9 @@ class MessageView : View() {
             channels.forEach { channel ->
                 tab(channel.name) {
                     vbox {
-//                        messageView = listview(currentMessages.filter { it.channel == channel.name }.map(Message::text).asObservable())
                         messageView = listview(currentMessages[channel.name])
+                        messageView.scrollTo(currentMessages.size)
+
                         hbox {
                             val messageField = textarea()
                             button("Send").action {

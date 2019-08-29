@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.50"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.3.50"
 }
 
 group = "io.github.potatocurry"
@@ -17,7 +16,7 @@ dependencies {
     implementation("no.tornado:tornadofx:1.7.19")
     implementation("io.ktor:ktor-client-cio:1.2.3")
     implementation("io.ktor:ktor-client-websockets:1.2.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.12.0")
+    implementation("com.beust:klaxon:5.0.12")
 }
 
 tasks.withType<KotlinCompile> {

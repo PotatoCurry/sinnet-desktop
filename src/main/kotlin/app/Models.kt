@@ -1,8 +1,5 @@
 package app
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 data class Channel(
     val id: Int,
     val name: String,
@@ -17,9 +14,18 @@ data class User(
     val publicKey: String
 )
 
-@Serializable
+//@TypeFor(field = "type", adapter = TransmissionAdapter::class)
+//sealed class Transmission(val type: String)
+//
+//class TransmissionAdapter: TypeAdapter<Transmission> {
+//    override fun classFor(type: Any): KClass<out Transmission> = when (type as String) {
+//        "message" -> Message::class
+//        else -> throw IllegalArgumentException("Unknown type $type")
+//    }
+//}
+
 data class Message(
 //    val publicKey: String,
     val channel: String,
     val text: String
-)
+) //: Transmission("message")

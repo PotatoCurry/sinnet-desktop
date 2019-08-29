@@ -1,5 +1,7 @@
 package app
 
+import com.beust.klaxon.FieldRenamer
+import com.beust.klaxon.Klaxon
 import io.ktor.client.HttpClient
 import io.ktor.client.features.defaultRequest
 import io.ktor.client.features.websocket.DefaultClientWebSocketSession
@@ -19,17 +21,17 @@ import javafx.stage.Stage
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.list
-import kotlinx.serialization.stringify
 import tornadofx.App
 import tornadofx.observableListOf
 import tornadofx.observableMapOf
 import view.ActiveView
 
-val json = Json(JsonConfiguration.Stable)
+val klaxon = Klaxon().fieldRenamer(
+    object: FieldRenamer {
+        override fun toJson(fieldName: String) = FieldRenamer.camelToUnderscores(fieldName)
+        override fun fromJson(fieldName: String) = FieldRenamer.underscoreToCamel(fieldName)
+    }
+)
 
 lateinit var websocketSession: DefaultClientWebSocketSession
 
@@ -47,33 +49,31 @@ val client = HttpClient {
 val channels: List<Channel>
     get() {
         val channelsJson = runBlocking { client.get<String>(path = "/channels") }
-        return json.parse(Channel.serializer().list, channelsJson)
+        return klaxon.parseArray(channelsJson)!!
     }
 
 @KtorExperimentalAPI
 val messageHistory: List<Message>
     get() {
         val messagesJson = runBlocking { client.get<String>(path = "/channels/channel1") }
-        return json.parse(Message.serializer().list, messagesJson)
+        return klaxon.parseArray(messagesJson)!!
     }
 
 @KtorExperimentalAPI
 val currentMessages = observableMapOf<String, ObservableList<String>>()
 
-@ImplicitReflectionSerializer
 suspend fun sendMessage(channel: String, text: String) {
     with (websocketSession) {
         val message = Message(
             channel,
             text
         )
-        outgoing.send(Frame.Text(json.stringify(message)))
+        outgoing.send(Frame.Text(klaxon.toJsonString(message)))
         println("sent $message")
     }
 }
 
 @KtorExperimentalAPI
-@ImplicitReflectionSerializer
 class Main : App(ActiveView::class) {
     override fun start(stage: Stage) {
         stage.title = "Sinnet"
@@ -98,7 +98,7 @@ class Main : App(ActiveView::class) {
                 when (frame) {
                     is Frame.Text -> {
                         val text = frame.readText()
-                        val message = json.parse(Message.serializer(), text)
+                        val message = klaxon.parse<Message>(text)!!
                         println("received $message")
                         addMessage(message)
                     }
