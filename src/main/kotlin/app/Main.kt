@@ -2,6 +2,7 @@ package app
 
 import com.beust.klaxon.FieldRenamer
 import com.beust.klaxon.Klaxon
+import com.sun.jmx.snmp.EnumRowStatus.active
 import io.ktor.client.HttpClient
 import io.ktor.client.features.defaultRequest
 import io.ktor.client.features.websocket.DefaultClientWebSocketSession
@@ -21,10 +22,9 @@ import javafx.stage.Stage
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import tornadofx.App
-import tornadofx.observableListOf
-import tornadofx.observableMapOf
+import tornadofx.*
 import view.ActiveView
+import view.LoginView
 
 val klaxon = Klaxon().fieldRenamer(
     object: FieldRenamer {
@@ -35,10 +35,12 @@ val klaxon = Klaxon().fieldRenamer(
 
 lateinit var websocketSession: DefaultClientWebSocketSession
 
+lateinit var server: String
+
 @KtorExperimentalAPI
 val client = HttpClient {
     defaultRequest {
-        host = "127.0.0.1"
+        host = server
         port = 8080
     }
 
@@ -74,49 +76,46 @@ suspend fun sendMessage(channel: String, text: String) {
 }
 
 @KtorExperimentalAPI
-class Main : App(ActiveView::class) {
+class Main : App(LoginView::class) {
     override fun start(stage: Stage) {
         stage.title = "Sinnet"
-        stage.setOnCloseRequest {
-            runBlocking { closeSession() }
-        }
 
-        channels.forEach { currentMessages[it.name] = observableListOf() }
-        messageHistory.forEach { addMessage(it) }
-        GlobalScope.launch {
-            launchWebsocket()
-        }
+
+//        stage.setOnCloseRequest {
+//            runBlocking { closeSession() }
+//        }
 
         super.start(stage)
     }
+}
 
-    suspend fun launchWebsocket() {
-        client.webSocket(path = "/messages") {
-            websocketSession = this
 
-            for (frame in incoming) {
-                when (frame) {
-                    is Frame.Text -> {
-                        val text = frame.readText()
-                        val message = klaxon.parse<Message>(text)!!
-                        println("received $message")
-                        addMessage(message)
-                    }
-                    else -> {
-                        println("Received ${frame.data}")
-                    }
+suspend fun launchWebsocket() {
+    client.webSocket(path = "/messages") {
+        websocketSession = this
+
+        for (frame in incoming) {
+            when (frame) {
+                is Frame.Text -> {
+                    val text = frame.readText()
+                    val message = klaxon.parse<Message>(text)!!
+                    println("received $message")
+                    addMessage(message)
+                }
+                else -> {
+                    println("Received ${frame.data}")
                 }
             }
         }
     }
+}
 
-    fun addMessage(message: Message) {
-        Platform.runLater {
-            currentMessages[message.channel]!!.add(message.text)
-        }
+fun addMessage(message: Message) {
+    Platform.runLater {
+        currentMessages[message.channel]!!.add(message.text)
     }
+}
 
-    suspend fun closeSession() {
-        websocketSession.close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
-    }
+suspend fun closeSession() {
+    websocketSession.close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
 }
