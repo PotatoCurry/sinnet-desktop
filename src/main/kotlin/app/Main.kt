@@ -79,7 +79,6 @@ class Main : App(LoginView::class) {
     }
 }
 
-
 @KtorExperimentalAPI
 suspend fun launchWebsocket() {
     client.webSocket(path = "/messages") {
@@ -89,9 +88,15 @@ suspend fun launchWebsocket() {
             when (frame) {
                 is Frame.Text -> {
                     val text = frame.readText()
-                    val message = klaxon.parse<Message>(text)!!
-                    println("received $message")
-                    addMessage(message)
+                    when (val transmission = klaxon.parse<Transmission>(text)) {
+                        is UserJoin -> {
+                            println("New user connected")
+                        }
+                        is Message -> {
+                            println("Received $transmission")
+                            addMessage(transmission)
+                        }
+                    }
                 }
                 else -> {
                     println("Received ${frame.data}")
