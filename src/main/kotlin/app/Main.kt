@@ -91,9 +91,14 @@ suspend fun launchWebsocket() {
                     when (val transmission = klaxon.parse<Transmission>(text)) {
                         is UserJoin -> {
                             println("New user connected")
+                            addMessage(transmission)
                         }
                         is Message -> {
                             println("Received $transmission")
+                            addMessage(transmission)
+                        }
+                        is UserLeave -> {
+                            println("User disconnected")
                             addMessage(transmission)
                         }
                     }
@@ -107,8 +112,22 @@ suspend fun launchWebsocket() {
 }
 
 @KtorExperimentalAPI
-fun addMessage(message: Message) {
+fun addMessage(transmission: Transmission) {
     Platform.runLater {
-        currentMessages[message.channel]!!.add(message.text)
+        when (transmission) {
+            is UserJoin -> {
+                
+            }
+            is UserLeave -> {
+
+            }
+            is Message -> {
+                val messageList = currentMessages[transmission.channel]
+                if (messageList != null)
+                    messageList.add(transmission.text)
+                else
+                    println("No channel ${transmission.channel}")
+            }
+        }
     }
 }
