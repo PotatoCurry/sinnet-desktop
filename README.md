@@ -1,6 +1,8 @@
 # sinnet-desktop
 The desktop client for the Sinnet chat program.
 
+[Server Component](https://github.com/PotatoCurry/sinnet-server)
+
 ## What is Sinnet?
 Sinnet is an open-source, self-hostable chat server that bakes PGP into the core functionality.
 Instead of a traditional account system, identities are backed from the keys used to sign users' messages.
